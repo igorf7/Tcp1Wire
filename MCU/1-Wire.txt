@@ -1,0 +1,2 @@
+1-Wire pin PB11
+Pull-up resistor 4k7 between PB11 and +5V
