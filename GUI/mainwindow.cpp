@@ -114,12 +114,12 @@ void MainWindow::onTcpConnButton()
 void MainWindow::onConfirmTcpConnection(bool connected)
 {
     if (connected) {
+        ui->tcpConnButton->setIcon(QPixmap(":/images/connect.png"));
         statusBar()->showMessage(tr("Соединение установлено"));
-        ui->tcpConnButton->setText(tr("Отключить"));
     }
     else {
+        ui->tcpConnButton->setIcon(QPixmap(":/images/disconnect.png"));
         statusBar()->showMessage(tr("Соединение разорвано"));
-        ui->tcpConnButton->setText(tr("Подключить"));
     }
     isTcpConnected = connected;
 }

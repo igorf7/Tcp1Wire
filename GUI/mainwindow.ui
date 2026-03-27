@@ -9,7 +9,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>303</width>
+    <width>293</width>
     <height>383</height>
    </rect>
   </property>
@@ -60,8 +60,15 @@
           <height>0</height>
          </size>
         </property>
+        <property name="toolTip">
+         <string>TCP Connect/Disconnect</string>
+        </property>
         <property name="text">
-         <string>Подключить</string>
+         <string/>
+        </property>
+        <property name="icon">
+         <iconset resource="res.qrc">
+          <normaloff>:/images/disconnect.png</normaloff>:/images/disconnect.png</iconset>
         </property>
        </widget>
       </item>
@@ -131,8 +138,11 @@
           <height>16777215</height>
          </size>
         </property>
+        <property name="toolTip">
+         <string>Start polling</string>
+        </property>
         <property name="text">
-         <string>Старт</string>
+         <string>Start</string>
         </property>
        </widget>
       </item>
@@ -163,7 +173,7 @@
       <item>
        <widget class="QPushButton" name="clearPushButton">
         <property name="text">
-         <string>Очистить</string>
+         <string>Clean</string>
         </property>
        </widget>
       </item>
@@ -176,7 +186,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>303</width>
+     <width>293</width>
      <height>21</height>
     </rect>
    </property>
