@@ -30,9 +30,9 @@ int main(void)
 	InitUart(USART_ETH, 115200, &uartEvents);
 	
     /* Enable Watchdog */
-    #ifndef DEBUG
+#ifndef DEBUG
     InitWatchdog();
-    #endif
+#endif
 	
     __enable_irq();
     
@@ -49,9 +49,9 @@ int main(void)
 void BackgroundTask(void)
 {
     /* Reload watchdog */
-    #ifndef DEBUG
+#ifndef DEBUG
     WatchdogReload(KR_KEY_Reload);
-    #endif
+#endif
 }
 
 /*!

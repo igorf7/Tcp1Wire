@@ -1,0 +1,17 @@
+*.DS_Store
+._*
+*.
+!.gitignore
+MCU/keil/Binary/
+MCU/keil/Listings/
+MCU/keil/Objects/
+MCU/ses/Output/
+GUI/.qtcreator/
+GUI/build/
+GUI/Binary/
+*.user
+*.user*
+*.zip
+*.ini
+*.csv
+*.bat
