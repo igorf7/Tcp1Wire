@@ -1,7 +1,7 @@
 #ifndef USERTYPES_H
 #define USERTYPES_H
 
-#include "qglobal.h"
+#include "qtypes.h"
 
 #define DS18B20_SIGN_MASK	0xF800
 

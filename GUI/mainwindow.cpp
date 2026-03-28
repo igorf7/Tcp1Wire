@@ -126,7 +126,11 @@ void MainWindow::onConfirmTcpConnection(bool connected)
 void MainWindow::timerEvent(QTimerEvent *event)
 {
     if (event->timerId() == owPollingEvent) {
-        this->owDataRead(9);
+        if (owPollingEvent != 0) {
+            killTimer(owPollingEvent);
+            owPollingEvent = 0;
+            this->owDataRead(9);
+        }
     }
 }
 
@@ -393,6 +397,8 @@ void MainWindow::onTcpResponse(const QByteArray &response)
             owDevIndex++;
         else
             owDevIndex = 0;
+
+        this->startPolling();
         break;
 
     case eOwBusWrite:
