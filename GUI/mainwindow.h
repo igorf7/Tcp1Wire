@@ -62,7 +62,7 @@ private:
 
     bool isTcpConnected = false;
     bool isOwSearchDone = false;
-    bool isPollingRunning = false;
+    bool isOwPollRunning = false;
 
     void startPolling();
     void owDataRead(quint16 read_data_len);

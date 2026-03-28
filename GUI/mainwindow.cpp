@@ -112,7 +112,7 @@ void MainWindow::onConfirmTcpConnection(bool connected)
     else {
         ui->tcpConnButton->setIcon(QPixmap(":/images/disconnect.png"));
         statusBar()->showMessage(tr("Disconnected"));
-        if (isPollingRunning) {
+        if (isOwPollRunning) {
             this->onStartButtonClicked();
         }
     }
@@ -141,13 +141,13 @@ void MainWindow::onStartButtonClicked()
 {
     if (!isTcpConnected) return;
 
-    if (!isPollingRunning) {
-        isPollingRunning = true;
+    if (!isOwPollRunning) {
+        isOwPollRunning = true;
         ui->startPollingButton->setText(tr("Stop"));
         this->startPolling();
     }
     else {
-        isPollingRunning = false;
+        isOwPollRunning = false;
         ui->startPollingButton->setText(tr("Start"));
         if (owPollingEvent != 0) {
             killTimer(owPollingEvent);
@@ -398,7 +398,8 @@ void MainWindow::onTcpResponse(const QByteArray &response)
         else
             owDevIndex = 0;
 
-        this->startPolling();
+        if (isOwPollRunning)
+            this->startPolling();
         break;
 
     case eOwBusWrite:
