@@ -370,16 +370,17 @@ void MainWindow::onTcpResponse(const QByteArray &response)
         case 0x28: // DS18B20
             if (rx_packet->data[8] != OneWire::calcCrc8(rx_packet->data, 8)) {
                 statusBar()->showMessage(tr("!!! CRC8 Error !!!"));
-                return;
             }
-            utemper = (rx_packet->data[1] << 8) | rx_packet->data[0];
-            sign = utemper & DS18B20_SIGN_MASK;
-            if (sign != 0) utemper = (0xFFFF - utemper + 1);
-            ftemper = (float)utemper * 0.0625f;
-            ui->textEdit->append("Temperature: " + QString::number(ftemper, 'f', 1) + " °C");
-            ui->textEdit->append("Alarm High: " + QString::number((qint8)rx_packet->data[2]));
-            ui->textEdit->append("Alarm Low: " + QString::number((qint8)rx_packet->data[3]));
-            ui->textEdit->append("Resolution code: " + QString::number((qint8)rx_packet->data[4]));
+            else {
+                utemper = (rx_packet->data[1] << 8) | rx_packet->data[0];
+                sign = utemper & DS18B20_SIGN_MASK;
+                if (sign != 0) utemper = (0xFFFF - utemper + 1);
+                ftemper = (float)utemper * 0.0625f;
+                ui->textEdit->append("Temperature: " + QString::number(ftemper, 'f', 1) + " °C");
+                ui->textEdit->append("Alarm High: " + QString::number((qint8)rx_packet->data[2]));
+                ui->textEdit->append("Alarm Low: " + QString::number((qint8)rx_packet->data[3]));
+                ui->textEdit->append("Resolution code: " + QString::number((qint8)rx_packet->data[4]));
+            }
             break;
         default: // other device
             ui->textEdit->append(OneWire::getDescription(dev_family));
@@ -392,9 +393,6 @@ void MainWindow::onTcpResponse(const QByteArray &response)
             owDevIndex++;
         else
             owDevIndex = 0;
-
-        if (isPollingRunning)
-            this->startPolling();
         break;
 
     case eOwBusWrite:
