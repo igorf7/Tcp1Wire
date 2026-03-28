@@ -30,7 +30,7 @@ signals:
     void sendToServer(const QByteArray &msg);
 
 protected:
-    int owMeasureTimeEvent = 0;
+    int owPollingEvent = 0;
     void timerEvent(QTimerEvent *event);
 
 public slots:
@@ -49,14 +49,11 @@ private slots:
 private:
     Ui::MainWindow *ui;
 
-    static const size_t USB_BUFF_SIZE = 65;
-    static const int USB_POLLING_PERIOD = 10;
-
     QList<quint64> owDeviceAddressList;
     QList<QByteArray> owPacketQueue;
     QHash<quint64, int> selDevices;
 
-    int owMeasureTime = 850; // ms
+    int owPollingTime = 1000; // ms
     int owTotalDeviceCount = 0;
     int owSelDeviceCount = 0;
     int owDevIndex = 0;
@@ -65,9 +62,9 @@ private:
 
     bool isTcpConnected = false;
     bool isOwSearchDone = false;
-    bool isMeasureRunning = false;
+    bool isPollingRunning = false;
 
-    void startMeasure();
+    void startPolling();
     void owDataRead(quint16 read_data_len);
     void initDeviceComboBox();
     void sendOwCmd(TOpcode opcode);

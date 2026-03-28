@@ -2,14 +2,6 @@
 #include "ui_mainwindow.h"
 #include "tcpclient.h"
 #include <QThread>
-#include <QDialog>
-#include <QDir>
-#include <QFile>
-#include <QTextStream>
-#include <QDateTime>
-#include <QDebug>
-
-using namespace std;
 
 /**
  * @brief MainWindow Class Constructor
@@ -43,7 +35,7 @@ MainWindow::MainWindow(QWidget *parent)
     connect(ui->tcpConnButton, SIGNAL(clicked()), this, SLOT(onTcpConnButton()));
     connect(ui->searchPushButton, SIGNAL(clicked()), this, SLOT(onSearchButtonClicked()));
     connect(ui->deviceComboBox, SIGNAL(currentIndexChanged(int)), this, SLOT(onDeviceComboBoxChanged(int)));
-    connect(ui->startMeasureButton, SIGNAL(clicked()), this, SLOT(onStartButtonClicked()));
+    connect(ui->startPollingButton, SIGNAL(clicked()), this, SLOT(onStartButtonClicked()));
     connect(ui->clearPushButton, SIGNAL(clicked()), this, SLOT(onClearButtonClicked()));
 
     /* TCP connection settings by default */
@@ -115,11 +107,14 @@ void MainWindow::onConfirmTcpConnection(bool connected)
 {
     if (connected) {
         ui->tcpConnButton->setIcon(QPixmap(":/images/connect.png"));
-        statusBar()->showMessage(tr("Соединение установлено"));
+        statusBar()->showMessage(tr("Connected"));
     }
     else {
         ui->tcpConnButton->setIcon(QPixmap(":/images/disconnect.png"));
-        statusBar()->showMessage(tr("Соединение разорвано"));
+        statusBar()->showMessage(tr("Disconnected"));
+        if (isPollingRunning) {
+            this->onStartButtonClicked();
+        }
     }
     isTcpConnected = connected;
 }
@@ -130,9 +125,7 @@ void MainWindow::onConfirmTcpConnection(bool connected)
  */
 void MainWindow::timerEvent(QTimerEvent *event)
 {
-    if (event->timerId() == owMeasureTimeEvent) {
-        killTimer(owMeasureTimeEvent);
-        owMeasureTimeEvent = 0;
+    if (event->timerId() == owPollingEvent) {
         this->owDataRead(9);
     }
 }
@@ -144,16 +137,18 @@ void MainWindow::onStartButtonClicked()
 {
     if (!isTcpConnected) return;
 
-    if (isMeasureRunning) {
-        isMeasureRunning = false;
-        ui->startMeasureButton->setText(tr("Старт"));
-        killTimer(owMeasureTimeEvent);
-        owMeasureTimeEvent = 0;
+    if (!isPollingRunning) {
+        isPollingRunning = true;
+        ui->startPollingButton->setText(tr("Stop"));
+        this->startPolling();
     }
     else {
-        isMeasureRunning = true;
-        ui->startMeasureButton->setText(tr("Стоп"));
-        this->startMeasure();
+        isPollingRunning = false;
+        ui->startPollingButton->setText(tr("Start"));
+        if (owPollingEvent != 0) {
+            killTimer(owPollingEvent);
+            owPollingEvent = 0;
+        }
     }
 }
 
@@ -173,7 +168,7 @@ void MainWindow::onSearchButtonClicked()
 {
     if (!isTcpConnected) return;
 
-    ui->startMeasureButton->setEnabled(false);
+    ui->startPollingButton->setEnabled(false);
 
     isOwSearchDone = false;
     owDeviceAddressList.clear();
@@ -229,35 +224,12 @@ void MainWindow::onDeviceComboBoxChanged(int index)
     owSelDeviceCount = selDevices.size();
     statusBar()->showMessage(ui->deviceComboBox->currentText() +
                             " device found: " + QString::number(owSelDeviceCount));
-
-    /* Switch the sensor to working mode */
-    if ((dev_family == 0x55) || (dev_family == 0x58)) {
-        QByteArray packet;
-        if (owPacketQueue.isEmpty()) owPacketQueue.clear();
-
-        /* Place MATCHROM packet into packet queue */
-        packet.append(OW_MATCHROM_CMD);
-        this->putPacketToQueue(eOwBusWrite, packet);
-
-        /* Place ADDRESS packet into packet queue */
-        packet.clear();
-        packet.append(intToByteArray(selDevices.key(owDevIndex)));
-        this->putPacketToQueue(eOwBusWrite, packet);
-
-        /* Place GOTO_APP_CMD packet into packet queue */
-        packet.clear();
-        packet.append(OW_GOTO_APP_CMD);
-        this->putPacketToQueue(eOwBusWrite, packet);
-
-        /* Init Reset/Presence procedure */
-        this->sendOwCmd(eOwBusReset);
-    }
 }
 
 /**
- * @brief MainWindow::startMeasure
+ * @brief MainWindow::startPolling
  */
-void MainWindow::startMeasure()
+void MainWindow::startPolling()
 {
     QByteArray packet;
     quint8 rom_cmd = (owSelDeviceCount > 1) ? OW_SKIPROM_CMD : OW_MATCHROM_CMD;
@@ -284,7 +256,7 @@ void MainWindow::startMeasure()
     this->sendOwCmd(eOwBusReset);
 
     /* Start measure inyerval timer */
-    owMeasureTimeEvent = startTimer(owMeasureTime);
+    owPollingEvent = startTimer(owPollingTime);
 }
 
 /**
@@ -360,7 +332,6 @@ void MainWindow::onTcpResponse(const QByteArray &response)
     float ftemper = 0.0f;
     int dev_cnt = 0;
     quint16 utemper = 0, sign = 0;
-    quint16 adc1 = 0, adc2 = 0, dac1 = 0, dac2 = 0;
     quint8 dev_family = 0;
 
     switch (rx_packet->opcode)
@@ -379,9 +350,9 @@ void MainWindow::onTcpResponse(const QByteArray &response)
             this->initDeviceComboBox();
             dev_cnt = owDeviceAddressList.size();
             if (dev_cnt > 0)
-                ui->startMeasureButton->setEnabled(true);
+                ui->startPollingButton->setEnabled(true);
             else
-                ui->startMeasureButton->setEnabled(false);
+                ui->startPollingButton->setEnabled(false);
 
             statusBar()->showMessage(tr("Total 1-Wire devices found: ") +
                                      QString::number(dev_cnt));
@@ -395,15 +366,12 @@ void MainWindow::onTcpResponse(const QByteArray &response)
         ui->textEdit->append("Address: " +
                              QString::number(selDevices.key(owDevIndex), 16).toUpper());
 
-        if ((dev_family == 0x28) || (dev_family == 0x55) || (dev_family == 0x58)) {
-            if (rx_packet->data[8] != OneWire::calcCrc8(rx_packet->data, 8)) {
-                statusBar()->showMessage(tr("!!! Ошибка CRC8 !!!"));
-                return;
-            }
-        }
-
         switch (dev_family) {
         case 0x28: // DS18B20
+            if (rx_packet->data[8] != OneWire::calcCrc8(rx_packet->data, 8)) {
+                statusBar()->showMessage(tr("!!! CRC8 Error !!!"));
+                return;
+            }
             utemper = (rx_packet->data[1] << 8) | rx_packet->data[0];
             sign = utemper & DS18B20_SIGN_MASK;
             if (sign != 0) utemper = (0xFFFF - utemper + 1);
@@ -412,17 +380,6 @@ void MainWindow::onTcpResponse(const QByteArray &response)
             ui->textEdit->append("Alarm High: " + QString::number((qint8)rx_packet->data[2]));
             ui->textEdit->append("Alarm Low: " + QString::number((qint8)rx_packet->data[3]));
             ui->textEdit->append("Resolution code: " + QString::number((qint8)rx_packet->data[4]));
-            break;
-        case 0x55: // DD84
-        case 0x58:
-            adc1 = ((rx_packet->data[1] << 8) & 0xFF00) | (rx_packet->data[0] & 0x00FF);
-            adc2 = ((rx_packet->data[3] << 8) & 0xFF00) | (rx_packet->data[2] & 0x00FF);
-            dac1 = ((rx_packet->data[5] << 8) & 0xFF00) | (rx_packet->data[4] & 0x00FF);
-            dac2 = ((rx_packet->data[7] << 8) & 0xFF00) | (rx_packet->data[6] & 0x00FF);
-            ui->textEdit->append("ADC 1: " + QString::number(adc1));
-            ui->textEdit->append("ADC 2: " + QString::number(adc2));
-            ui->textEdit->append("DAC 1: " + QString::number(dac1));
-            ui->textEdit->append("DAC 2: " + QString::number(dac2));
             break;
         default: // other device
             ui->textEdit->append(OneWire::getDescription(dev_family));
@@ -436,8 +393,8 @@ void MainWindow::onTcpResponse(const QByteArray &response)
         else
             owDevIndex = 0;
 
-        if (isMeasureRunning)
-            this->startMeasure();
+        if (isPollingRunning)
+            this->startPolling();
         break;
 
     case eOwBusWrite:

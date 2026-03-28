@@ -17,8 +17,6 @@ TcpClient::TcpClient(QObject *parent) : QObject(parent)
     connect(tcpSocket, SIGNAL(connected()), SLOT(slotConnected()));
     connect(tcpSocket, SIGNAL(disconnected()), SLOT(slotDisconnected()));
     connect(tcpSocket, SIGNAL(readyRead()), SLOT(slotReadyRead()));
-    //connect(tcpSocket, SIGNAL(error(QAbstractSocket::SocketError)),
-    //        this, SLOT(slotError(QAbstractSocket::SocketError)));
 }
 
 /**
@@ -26,8 +24,6 @@ TcpClient::TcpClient(QObject *parent) : QObject(parent)
  */
 TcpClient::~TcpClient()
 {
-    qDebug() <<"By-by from" <<this;
-
     if (tcpSocket->isOpen()) {
         tcpSocket->close();
     }

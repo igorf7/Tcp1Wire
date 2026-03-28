@@ -8,7 +8,10 @@
 
 QString& OneWire::getName(quint8 family)
 {
-    return deviceName = deviceMap.key(family);
+    if (deviceMap.contains(family))
+        return deviceName = deviceMap.value(family);
+    else
+        return deviceName = "0x" + QString::number(family, 16).toUpper();
 }
 
 /**
@@ -18,7 +21,11 @@ QString& OneWire::getName(quint8 family)
  */
 QString& OneWire::getDescription(quint8 family)
 {
-    return descriptionString = description.value(family);
+    if (description.contains(family))
+        return descriptionString = description.value(family);
+    else
+        return descriptionString = "Unknoun device with family code 0x" +
+                                   QString::number(family, 16).toUpper();
 }
 
 /**
@@ -28,7 +35,17 @@ QString& OneWire::getDescription(quint8 family)
  */
 quint8 OneWire::getFamily(const QString &name)
 {
-    return deviceMap.value(name);
+    quint8 family = deviceMap.key(name, 0);
+
+    if (family != 0) {
+        return family;
+    }
+    else {
+        bool Ok;
+        quint8 val = (quint8)name.toUInt(&Ok, 16);
+        family = Ok ? val : 0;
+    }
+    return family;
 }
 
 /**

@@ -122,7 +122,7 @@
        </widget>
       </item>
       <item>
-       <widget class="QPushButton" name="startMeasureButton">
+       <widget class="QPushButton" name="startPollingButton">
         <property name="enabled">
          <bool>false</bool>
         </property>
@@ -187,7 +187,7 @@
      <x>0</x>
      <y>0</y>
      <width>293</width>
-     <height>21</height>
+     <height>30</height>
     </rect>
    </property>
   </widget>
