@@ -150,6 +150,9 @@
     </item>
     <item>
      <widget class="QTextEdit" name="textEdit">
+      <property name="frameShape">
+       <enum>QFrame::Shape::StyledPanel</enum>
+      </property>
       <property name="readOnly">
        <bool>true</bool>
       </property>
@@ -187,7 +190,7 @@
      <x>0</x>
      <y>0</y>
      <width>293</width>
-     <height>30</height>
+     <height>21</height>
     </rect>
    </property>
   </widget>
